@@ -4,7 +4,7 @@ date:   2023-05-10 17:00:00
 tags: [aws,splunk]
 ---
 
-As of writing there are two methods to ingest data from AWS into Splunk, one is the [push method][sqs-s3] which is based on SQS-S3, and the [pull method][firehose] which is based on Amazon Kinesis Data Firehose (KDF). In this guide, we will assume the you are using the pull method.
+At present, there are two methods available for ingesting data from AWS into Splunk. The first method is the ['push method'][sqs-s3] based on SQS-S3, and the second method is the ['pull method'][firehose] based on Amazon Kinesis Data Firehose (KDF). For the purpose of this guide, we will assume that you are using the pull method.
 
 #### Prerequisities:
 Before we begin it is helpful to have some AWS experience, to be specific the following services:
@@ -14,7 +14,7 @@ Before we begin it is helpful to have some AWS experience, to be specific the fo
 - AWS Identity and Access Management (IAM)
 
 #### Splunk Ingestion Failure Context: 
-When Kinesis Firehose fails to write to Splunk via HEC (due to connection timeout, HEC token issues or other), it will write its logs into an S3 DLQ bucket. However, the contents of the logs in the bucket is not easily re-ingested into Splunk, as it is log contents is wrapped in additional information about the failure, and the original message base64 encoded. So for example, if using the AWS Splunk Add-On, it is not possible to decode the contents of the message.
+When Kinesis Firehose encounters a failure while writing to Splunk via HEC (e.g., Connection timeout,  wrong HEC token, etc) it automatically writes its logs into an S3 DLQ bucket. However, re-ingesting the log contents from the DLQ bucket into Splunk becomes challenging because the log contents are wrapped in additional information about the failure and the original message is base64 encoded. 
 
 To re-ingest the failed logs we will need to do the following:
 <br />1/ Deploy Re-Ingestion Pipeline
@@ -27,10 +27,10 @@ The Re-Ingestion Pipeline architecture diagram:
 
 Arch Image Here 
 
-You can deploy this pipeline via [cfn template][firehose-cfn], this will deploy two Lambda Functions, an S3 Bucket, and a KDF Stream. The S3 Bucket will server to temporarily store the failed logs to be re-ingested. The first Lambda Function (S3 Re-ingest) will be triggered by the S3 Bucket, will grab the log file, will decompress, decode, and remove extra meta-data, finally sending the logs to the newly created KDF Stream. Once the log file is placed on KDF Stream, the Lambda Function (Kinesis Transformation) will be triggered that will massage the log data in the format that Splunk is expecting the logs. Once that function is complete, KDF Stream will push the data to Splunk HEC. 
+To deploy this pipeline, you can use the [cfn template][firehose-cfn]. The deployment process includes setting up two Lambda Functions, an S3 Temp Bucket, and a KDF Stream. The S3 Temp Bucket serves the purpose of temporarily storing the failed logs for re-ingestion. The first Lambda Function, known as 'S3 Re-ingest,' gets triggered by the S3 Temp Bucket. It retrieves the log files, decompresses, decodes, removes extra meta-data, and then sends the logs to the newly created KDF Stream. Once the log files are placed in the KDF Stream, it triggers the second Lambda Function, called 'Kinesis Transformation.' This function processes the log data to match Splunk's expected log format. Once the transformation is complete, the KDF Stream pushes the data to your Splunk HEC.
 
 #### Prepare the data to be Re-Ingested
-To enable this solution, we will need to first prepare the data to be re-ingested. The way this happens is via copying the logs we want to re-ingest from the S3 DQL bucket to our S3 tmp bucket. This is a manual step, the reason for this is we want to make sure that the re-ingestion pipeline is only triggered once the Splunk Ingestion issue is properly fixed, and data can be properly ingested back into Splunk.
+To enable this solution, we need to perform the initial data preparation for re-ingestion. The process involves copying the logs that require re-ingestion from the S3 DQL bucket to our S3 tmp bucket. This step is manual to ensure that the re-ingestion pipeline is triggered only after resolving the Splunk Ingestion issue and ensuring proper data ingestion into Splunk.
 
 #### Re-Ingest Data into Splunk
 
