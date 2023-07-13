@@ -1,0 +1,7 @@
+---
+title:  "about me"
+date:   2023-01-01 17:00:00
+tags: [me]
+---
+
+All opinions are my own.
