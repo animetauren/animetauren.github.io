@@ -4,4 +4,6 @@ date:   2023-01-01 17:00:00
 tags: [me]
 ---
 
+i am a cloud architect, cloud engineer, ml enthusiast, sales engineer, and most of all curious.
+
 All opinions are my own.
