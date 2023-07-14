@@ -1,20 +1,23 @@
 ---
-title:  "Splunk with AWS Orgs"
+title:  "Centralized Logging and Monitoring in AWS Environments Leveraging AWS Organizations with Splunk"
 date:   2023-07-12 17:00:00
 tags: [aws,splunk]
 ---
 
 This blog post will go over how to setup Splunk integration with AWS Orgs managed AWS environments.
 
+Let's start by first defining the problem statement: Inefficient and scattered logging and monitoring practices across multiple AWS environments result in limited visibility, increased complexity, and higher operational risks. Lack of centralized control and analytics hampers troubleshooting, compliance management, and overall operational efficiency. 
+
+Use Case:
+Centralized logging and monitoring for all AWS environments using Splunk as the centralized platform for Data Analytics. 
+
+In our case we will leverage Splunk as our centralized platform for analytics. 
+
+Pre-Requisites/Audience:
+
 This makes the assumption that you leverage AWS Orgs, and follow the centralized account principle (e.g. [AWS Centralized Logging Account][centr-log-acct])
 
-Before we being we must first cover how to Get Data Into (GDI) Splunk from AWS:
-
-The first approach is to use Splunk Data Manager [(DM)][dm] to configure what AWS sources we want to ingest, ingest mechanism to use, and what AWS Account to pull data from. This does require some comfort with AWS CloudFormation (Cfn). Splunk Data Manager is the future for GDI from AWS, so if you can leverage DM for your use case, you use it. At the time of writing it currently does not support all sources, nor all use cases, in this case [AWS Orgs][onboard-dm] support.
-
-The second approach is to use either the SNS/SQS [Pull Mechanism][pull-based] or the Kinesis Firehose/CloudWatch [Push Mechanism][push-based] to ingest AWS data into Splunk. This approach requires comfortability with AWS CloudFormation Templates and IaC concepts. This is the underlying ingestion mechanisms that Splunk DM uses, the difference is that here we must create the cfn template, and configure the infrastructure to send logs into Splunk.
-
-Let's define the use case, and what our requirements are: 
+Solution Requirements:
 - All logs will be stored in a centralized logging account (CLA) in S3 or CloudWatch.
 - Solution needs to support ingesting logs from either S3 or CloudWatch into Splunk.
 - Solution needs to support fine control of which logs are sent to Splunk.
@@ -22,6 +25,13 @@ Let's define the use case, and what our requirements are:
 - Solution needs to be decoupled, and resilient to assure all logs are delivered to Splunk.
 - Solution needs to be secure, and support encryption-at-rest (EAR), encryption-in-transit (EIT). 
 
+Before we begin solutionizing we must first cover how to Get Data Into (GDI) Splunk from AWS:
+
+The first approach is to use Splunk Data Manager [(DM)][dm] to configure what AWS sources we want to ingest, ingest mechanism to use, and what AWS Account to pull data from. This does require some comfort with AWS CloudFormation (Cfn). Splunk Data Manager is the future for GDI from AWS, so if you can leverage DM for your use case, you use it. At the time of writing it currently does not support all sources, nor all use cases, in this case [AWS Orgs][onboard-dm] support.
+
+The second approach is to use either the SNS/SQS [Pull Mechanism][pull-based] or the Kinesis Firehose/CloudWatch [Push Mechanism][push-based] to ingest AWS data into Splunk. This approach requires comfortability with AWS CloudFormation Templates and IaC concepts. This is the underlying ingestion mechanisms that Splunk DM uses, the difference is that here we must create a custom cfn template, and configure the infrastructure to send logs into Splunk.
+
+In our solution we will leverage the second approach.
 
 FAQ:  
 
