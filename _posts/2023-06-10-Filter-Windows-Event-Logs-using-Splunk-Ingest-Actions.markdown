@@ -22,6 +22,10 @@ Let's beging by navigating to Ingest Actions:
 
 You are finished.
 
+#### Disclaimer
+
+The information shared is for general informational purposes only. I do not provide any warranty and recommend readers to test the content thoroughly before implementing it. Use the information at your own discretion and risk. 
+
 [ingest-actions]: https://community.splunk.com/t5/Splunk-Tech-Talks/Introducing-Ingest-Actions-Filter-Mask-Route-Repeat/ba-p/608111
 [ia-reqs]: https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/DataIngest#Requirements
 [ia-rulesets]: https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/DataIngest#Introduction_to_rules_and_rulesets
