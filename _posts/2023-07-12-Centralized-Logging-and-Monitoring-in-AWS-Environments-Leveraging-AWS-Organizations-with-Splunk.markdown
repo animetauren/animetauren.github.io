@@ -4,7 +4,7 @@ date:   2023-07-12 17:00:00
 tags: [aws,splunk]
 ---
 
-This blog post will go over how to setup Splunk integration with AWS Orgs managed AWS environments.
+This post will go over how to setup Splunk integration with AWS Orgs managed AWS environments.
 
 Let's start by first defining the problem statement: Inefficient and scattered logging and monitoring practices across multiple AWS environments result in limited visibility, increased complexity, and higher operational risks. Lack of centralized control and analytics hampers troubleshooting, compliance management, and overall operational efficiency. 
 
@@ -39,17 +39,17 @@ Who is this for?
 
 This is for customers who are using Splunk, want to ingest logs from AWS, and __AWS Orgs__.
 
-Who is this NOT for?
+Who is this __NOT__ for?
 
 This is __NOT__ for customers who can use Splunk Data Manager today to ingest logs from AWS into Splunk. 
-> [AWS Onboarding from a Single Account][onboard-single-dm]
-> [AWS Onboarding from Multiple Accounts (No AWS Orgs)][onboard-multi-dm]
+[AWS Onboarding from a Single Account][onboard-single-dm]
+[AWS Onboarding from Multiple Accounts (No AWS Orgs)][onboard-multi-dm]
 
 What should I consider?
 This solution is a general solution, this means that it aims to solve the problem for most, and may break for few.
 
 Why should do this?
-You need a solution, that is centralized, will scale, and will leverage the investments your team has made in terms of money, knowledge, and time.
+You need a solution, that is centralized, scalable, predicatable, and cannot wait for Splunk Data Manager to fully support AWS Orgs support.
 
 Why should I not do this?
 Your solution is working, there is no rush, and you can wait for Splunk Data Manager to get AWS Orgs support. Wait for that.
