@@ -1,5 +1,5 @@
 ---
-title:  "Using Splunk as your Centralized platform for ingesting Logging, Monitoring, and Metrics data from your AWS environment that is managed by AWS Organizations and AWS Control Tower"
+title:  "Using Splunk as your Centralized platform for ingesting Logging, Monitoring, and Metrics data from your AWS environment that is managed by AWS Organizations w(o) AWS Control Tower"
 date:   2023-07-12 17:00:00
 tags: [aws,splunk]
 ---
