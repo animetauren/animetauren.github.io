@@ -6,11 +6,11 @@ tags: [aws,splunk]
 
 This post will go over the considerations, archicture designs, and things to be aware of as you centralize Splunk as your platform for your AWS Environments, with the focus on AWS accounts managed by (AWS Organizations)[what-is-aws-org] and deployed by AWS Control Tower.
 
-####Considerations: 
+#### Considerations: 
 
 Let's start by first defining the problem statement: Inefficient and scattered logging and monitoring practices across multiple AWS environments results in limited visibility, increased complexity, and higher operational risks. Lack of centralized control and analytics hampers troubleshooting, compliance management, and overall operational efficiency. This can lead to wasteful cycles, and decrease in getting value of the platform. Companies are seeing the value of leveraging a centralized platform for Security, Obseravility, and Resiliency such as Splunk. 
 
-####Use Case:
+#### Use Case:
 Centralized logging and monitoring for all AWS environments using Splunk as the centralized platform for data stored in S3 (Logging, Metrics, and Monitoring). 
 
 In our case we will leverage Splunk as our centralized platform for. 
@@ -27,7 +27,7 @@ Solution Requirements:
 - Solution needs to be decoupled, and resilient to assure all logs are delivered to Splunk.
 - Solution needs to be secure, and support encryption-at-rest (EAR), encryption-in-transit (EIT). 
 
-####Architecture
+#### Architecture
 
 Before we begin we must first cover how are Getting Data Into (GDI) Splunk from our AWS sources:
 
@@ -48,7 +48,7 @@ In our solution we will leverage the AWS GDI Method, either mechanism will work 
 Still in progress...
 
 
-####FAQ:  
+#### FAQ:  
 
 Who is this for?
 
