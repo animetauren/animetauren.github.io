@@ -1,40 +1,61 @@
-# Site settings
-title: Henry Robalino
-description: 'personal blog'
-url: 'http://animetauren.github.io'
-baseurl: ''
-# google_analytics: 'UA-XXXXXX-X'
-# disable_landing_page: true
+# site settings
+
+title: cvless
+description: Jekyll theme for a beautiful online CV
+taglong: Jekyll theme for a beautiful online CV
+tagshort: Jekyll theme
+url: https://cvless.netlify.app
+baseurl: ""
+permalink: pretty
+repo: https://github.com/username/username.github.io
+
+# author settings
 
 author:
-  name: 'Henry Robalino'
-  github_username:  animetauren
-  linkedin_username:  hrobalino
+  name: Place Holder
+  email: username@domain.com
+photo: /assets/jpg/photo.jpg
 
-defaults:
-  -
-    scope:
-      path: ''
-      type: 'posts'
-    values:
-        layout: 'post'
+# social media links
 
-# Build settings
-destination: _site
-paginate: 10
-permalink: /:year/:title/
-markdown: kramdown
-highlighter: rouge
+social:
+  facebook: username
+  github: username
+  instagram: username
+  linkedin: username
+  stackoverflow: 0000000/username
+  twitter: username
+
+# build settings
+
+exclude:
+  - LICENSE
+  - README.md
+
+plugins:
+  - jekyll-feed
+  - jekyll-gist
+  - jekyll-paginate-v2
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+whitelist:
+  - jekyll-sitemap
 
 sass:
-    sass_dir: _sass
-    style: compressed
+  sass_dir: _sass
+  style: compressed
+  sourcemap: never
 
-kramdown:
-  # use Github Flavored Markdown
-  input: GFM
-  # do not replace newlines by <br>s
-  hard_wrap: false
+feed:
+  path: atom.xml
 
-plugins: ['jekyll-paginate']
-exclude: ['README.md', 'Gemfile', 'Gemfile.lock', 'screenshot.png']
+autopages:
+  enabled: false
+
+pagination:
+  enabled: true
+  per_page: 1
+  sort_reverse: true
+  permalink: /:num/
+  title: ":title &middot; Page :num"
