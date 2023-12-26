@@ -1,12 +1,15 @@
-<div class="pagination">
-  {% if paginator.next_page %}
-  <a class="pagination-item older" href="{{ paginator.next_page_path | relative_url }}">{% include svg/nav-arrow-left.svg %} Older</a>
-  {% else %}
-  <span class="pagination-item older">{% include svg/nav-arrow-left.svg %} Older</span>
-  {% endif %}
+<nav class="pagination" role="navigation">
   {% if paginator.previous_page %}
-  <a class="pagination-item newer" href="{{ paginator.previous_page_path | prepend: relative_url }}">Newer {% include svg/nav-arrow-right.svg %}</a>
-  {% else %}
-  <span class="pagination-item newer">Newer {% include svg/nav-arrow-right.svg %}</span>
+    {% if paginator.previous_page == 1 %}
+      <a rel="prev" class="posts newer btn small" href="{{ site.baseurl }}/#blog" title="Previous Page">← Newer Posts</a>
+    {% else %}
+      <a rel="prev" class="posts newer btn small" href="{{ site.baseurl }}/page{{ paginator.previous_page }}/">← Newer Posts</a>
+    {% endif %}
   {% endif %}
-</div>
+
+  <span class="pagination__page-number">Page {{ paginator.page}} of {{ paginator.total_pages}}</span>
+
+  {% if paginator.next_page %}
+    <a rel="next" class="posts older btn small" href="{{ site.baseurl }}/page{{ paginator.next_page }}/">Older Posts →</a>
+  {% endif %}
+</nav>

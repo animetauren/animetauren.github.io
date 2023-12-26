@@ -1,11 +1,14 @@
 ---
 layout: default
 ---
+<article class="post-container post-container--single">
 
-<article>
-  {% include header.html %}
-  <main>
+  <header class="post-header">
+    <h1 class="post-title">{{ page.title }}</h1>
+  </header>
+
+  <section class="post">
     {{ content }}
-  </main>
-  {% include footer.html %}
+  </section>
+
 </article>
