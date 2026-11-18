@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Filter Windows Event Logs using Splunk Ingest Actions — anmtrn</title>
+    <meta name="description" content="This post is a follow-up, more advance post to filter Window Event Logs in Splunk . What are we trying to accomplish? Why? Windows Event Logs…" />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/sites/">sites</a>
+        <a href="/runes/" aria-current="true">runes</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta"><time datetime="2023-06-10">2023.06.10</time></p>
+        <h1>Filter Windows Event Logs using Splunk Ingest Actions</h1>
+
+        <div class="prose">
+          <p>This post is a follow-up, more advance post to filter <a href="/runes/windows-event-logs-filter-splunk/">Window Event Logs in Splunk</a>.  </p>
+          <p>What are we trying to accomplish? Why?</p>
+          <p>Windows Event Logs (WEL)can often be noisy, and veracious when it comes to data produced. The best practice is to collect quality data into Splunk, but not all data is created equally. For this reason, we must filter WEL using regex rules before we ingest the log files into our Splunk Env. </p>
+          <p>We want to do this for one or mane of several reasons:</p>
+          <ul>
+          <li>Reduce ingest size (Helpful for SC Ingest Customers).</li>
+          <li>Reduce lenght of time processed due to smaller data size (Helpful for SC Workload Customers).</li>
+          <li>Increase efficience of searches, increase speed of alerts </li>
+          <li>Meet compliance requirements, while meeting budget numbers. </li>
+          </ul>
+          <p>With the introduction of <a href="https://community.splunk.com/t5/Splunk-Tech-Talks/Introducing-Ingest-Actions-Filter-Mask-Route-Repeat/ba-p/608111">Ingest Actions (IA)</a>, Splunk users gain access to an additional method for data ingestion. This approach allows users to focus on specific logs they require, enhancing data quality while effectively managing the quantity of ingested data. The availability and functionality of Ingest Actions depend on the user's Splunk version, platform, and permissions. 
+          <br>
+          <br>For more information, refer to the Splunk documentation on <a href="https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/DataIngest#Requirements">Ingest Actions requirements</a>.</p>
+          <p>This post will primarily focus on creating <a href="https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/DataIngest#Introduction_to_rules_and_rulesets">IA rulesets</a> to streamline and filter the excessive verbosity often associated with Windows Event Logs. We assume that you have already installed and configured the <a href="https://docs.splunk.com/Documentation/WindowsAddOn/8.1.2/User/DeploytheSplunkAdd-onforWindowswithForwarderManagement">Windows Add-on for Splunk</a>.</p>
+          <p>Before we proceed, it's important to note that the recommended IA rules we are suggesting are directly derived from the Splunk documentation for <a href="https://docs.splunk.com/Documentation/WindowsAddOn/latest/User/Configuration#Configure_event_cleanup_best_practices_in_props.conf">Windows event clean-up best practices</a>. In our case, we will be utilizing the recommended transforms and translating them into IA rulesets.</p>
+          <p>Let's beging by navigating to Ingest Actions:</p>
+          <ul>
+          <li>Inside of Splunk select Settings &gt; Data &gt; Ingest Actions</li>
+          <li>Once here we will select <a href="https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/DataIngest#Mask_with_regular_expression">"Mask with regular expression"</a></li>
+          <li>Open <a href="https://gist.github.com/animetauren/afddab3a2aff30526f6032766542ad22">IA Win Event Rule Set Gist</a>, this will list all the translate rules. </li>
+          <li>Select the appropriate Source (e.g., WinEventLog:System) and choose the correct regex. </li>
+          <li>In the replace box, enter a blank space, this will replace the matched string with a blank space.</li>
+          <li>Confirm that string is matched, and replaced with a blank space.</li>
+          </ul>
+          <p>You are finished.</p>
+          <h2>Disclaimer</h2>
+          <p>The information shared is for general informational purposes only. I do not provide any warranty and recommend readers to test the content thoroughly before implementing it. Use the information at your own discretion and risk. </p>
+        </div>
+
+        <p class="meta">originally published on blog.anmtrn.com</p>
+
+        <p class="back"><a href="/runes/">← runes</a></p>
+      </article>
+    </main>
+  </body>
+</html>

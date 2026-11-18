@@ -8,6 +8,7 @@
   --muted: #6f6f67;
   --line: #e7e7e1;
   --under: #cdcdc4;
+  --code: #f1f1ec;
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", "Courier New", monospace;
@@ -20,6 +21,7 @@
     --muted: #8d8d82;
     --line: #23231f;
     --under: #46463f;
+    --code: #17171a;
   }
 }
 
@@ -177,7 +179,7 @@ a:focus-visible {
 
 .page {
   flex: 1;
-  width: min(100% - 2.5rem, 40rem);
+  width: min(100% - 2.5rem, 52rem);
   margin: 0 auto;
   padding: clamp(2rem, 6vw, 3.5rem) 0 clamp(4rem, 12vh, 7rem);
 }
@@ -201,12 +203,12 @@ a:focus-visible {
 .intro {
   margin: 0 0 2.25rem;
   color: var(--muted);
-  max-width: 44ch;
+  max-width: 56ch;
 }
 
 .prose p {
   margin: 0 0 1.15rem;
-  max-width: 46ch;
+  max-width: 60ch;
 }
 
 .prose p:last-child {
@@ -228,7 +230,7 @@ a:focus-visible {
 .prose ol {
   margin: 0 0 1.15rem;
   padding-left: 1.4rem;
-  max-width: 46ch;
+  max-width: 60ch;
 }
 
 .prose li {
@@ -245,6 +247,27 @@ a:focus-visible {
 
 .prose strong {
   font-weight: 600;
+}
+
+.prose h2 {
+  margin: 2.5rem 0 0.8rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.prose code {
+  font-family: inherit;
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  background: var(--code);
+  border-radius: 2px;
+}
+
+.prose + .meta {
+  margin-top: 1.9rem;
 }
 
 .meta {
@@ -323,7 +346,7 @@ a:focus-visible {
 
 .sites p {
   margin: 0.4rem 0 0;
-  max-width: 46ch;
+  max-width: 60ch;
   color: var(--muted);
 }
 

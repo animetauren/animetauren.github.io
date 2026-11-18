@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Windows Event Logs Filter Splunk — anmtrn</title>
+    <meta name="description" content="This post will cover Windows Event Log Filtering, Splunk, best practice filters for Windows Event Logs, and implementation steps. What are we trying…" />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/sites/">sites</a>
+        <a href="/runes/" aria-current="true">runes</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta"><time datetime="2023-06-01">2023.06.01</time></p>
+        <h1>Windows Event Logs Filter Splunk</h1>
+
+        <div class="prose">
+          <p>This post will cover Windows Event Log Filtering, Splunk, best practice filters for Windows Event Logs, and implementation steps.</p>
+          <p>What are we trying to accomplish? Why?</p>
+          <p>Windows Event Logs (WEL) can often be noisy, and veracious when it comes to data produced. The best practice is to collect quality data into Splunk, but not all data is created equally. For this reason, we must filter WEL using regex rules before we ingest the log files into our Splunk Env. </p>
+          <p>We want to do this for one or mane of several reasons:</p>
+          <ul>
+          <li>Reduce ingest size (Helpful for SC Ingest Customers).</li>
+          <li>Reduce lenght of time processed due to smaller data size (Helpful for SC Workload Customers).</li>
+          <li>Increase efficience of searches, increase speed of alerts </li>
+          <li>Meet compliance requirements, while meeting budget numbers. </li>
+          </ul>
+          <p>To do this we can leverage a Splunk Forwarder and/or Universal Forwarder, along with a <a href="https://docs.splunk.com/Documentation/SplunkCloud/latest/Data/MonitorWindowseventlogdata#Use_the_inputs.conf_configuration_file_to_configure_event_log_monitoring">configured inputs.conf file</a>.  </p>
+          <p>A precompiled gist of the regex to implement can be found <a href="https://gist.github.com/animetauren/0b2c74c600c7ddd5a969ae025e0a0321">here</a>. Always validate your regex patterns, I recommend <a href="https://regex101.com">regex101</a></p>
+          <h2>Disclaimer</h2>
+          <p>The information shared is for general informational purposes only. I do not provide any warranty and recommend readers to test the content thoroughly before implementing it. Use the information at your own discretion and risk. </p>
+        </div>
+
+        <p class="meta">originally published on blog.anmtrn.com</p>
+
+        <p class="back"><a href="/runes/">← runes</a></p>
+      </article>
+    </main>
+  </body>
+</html>

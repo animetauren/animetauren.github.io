@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kinesis Firehose Re-Ingestion Pipeline for Splunk — anmtrn</title>
+    <meta name="description" content="At present, there are two methods available for ingesting data from AWS into Splunk. The first method is the &#x27;push method&#x27; based on SQS-S3, and the…" />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/sites/">sites</a>
+        <a href="/runes/" aria-current="true">runes</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta"><time datetime="2023-05-10">2023.05.10</time></p>
+        <h1>Kinesis Firehose Re-Ingestion Pipeline for Splunk</h1>
+
+        <div class="prose">
+          <p>At present, there are two methods available for ingesting data from AWS into Splunk. The first method is the <a href="https://docs.splunk.com/Documentation/AddOns/released/AWS/SQS-basedS3">'push method'</a> based on SQS-S3, and the second method is the <a href="https://docs.splunk.com/Documentation/AddOns/released/AWS/ConfigureFirehoseOverview">'pull method'</a> based on Amazon Kinesis Data Firehose (KDF). For the purpose of this guide, we will assume that you are using the pull method.</p>
+          <h2>Prerequisities:</h2>
+          <p>Before we begin it is helpful to have some AWS experience, to be specific the following services:</p>
+          <ul>
+          <li>Amazon Simple Storage Service (S3)</li>
+          <li>Amazon Kinesis Data Firehose (KDF)</li>
+          <li>AWS Lambda</li>
+          <li>AWS Identity and Access Management (IAM)</li>
+          </ul>
+          <h2>Splunk Ingestion Failure Context:</h2>
+          <p>When Kinesis Firehose encounters a failure while writing to Splunk via HEC (e.g., Connection timeout,  wrong HEC token, etc) it automatically writes its logs into an S3 DLQ bucket. However, re-ingesting the log contents from the DLQ bucket into Splunk becomes challenging because the log contents are wrapped in additional information about the failure and the original message is base64 encoded. </p>
+          <p>To re-ingest the failed logs we will need to do the following:
+          <br>1/ Deploy Re-Ingestion Pipeline
+          <br>2/ Prepare the data to be Re-Ingested
+          <br>3/ Re-Ingest Data into Splunk
+          <br>4/ Confirm data is in Splunk</p>
+          <h2>Deploy Re-Ingestion Pipeline</h2>
+          <p>The Re-Ingestion Pipeline architecture diagram:</p>
+          <p>Arch Image Here </p>
+          <p>To deploy this pipeline, you can use the <a href="https://github.com/animetauren/aws-splunk-firehose-error-reingest/blob/main/firehose-reingest/firehose_reingest.yaml">cfn template</a>. The deployment process includes setting up two Lambda Functions, an S3 Temp Bucket, and a KDF Stream. The S3 Temp Bucket serves the purpose of temporarily storing the failed logs for re-ingestion. The first Lambda Function, known as 'S3 Re-ingest,' gets triggered by the S3 Temp Bucket. It retrieves the log files, decompresses, decodes, removes extra meta-data, and then sends the logs to the newly created KDF Stream. Once the log files are placed in the KDF Stream, it triggers the second Lambda Function, called 'Kinesis Transformation.' This function processes the log data to match Splunk's expected log format. Once the transformation is complete, the KDF Stream pushes the data to your Splunk HEC.</p>
+          <h2>Prepare the data to be Re-Ingested</h2>
+          <p>To enable this solution, we need to perform the initial data preparation for re-ingestion. The process involves copying the logs that require re-ingestion from the S3 DQL bucket to our S3 tmp bucket. This step is manual to ensure that the re-ingestion pipeline is triggered only after resolving the Splunk Ingestion issue and ensuring proper data ingestion into Splunk.</p>
+          <h2>Re-Ingest Data into Splunk</h2>
+          <p>To kick off the re-ingest pipeline we need to manually trigger copying log files as stated above. A sample, and example command is below:</p>
+          <p>Commands: <code>aws s3 sync &lt;source&gt; &lt;dest&gt; --include "*splunk-failed/YYYY/MM/DD/HH/*"</code></p>
+          <p>Example: <code>aws s3 sync s3://example-splashback s3://example-reingest --include "*splunk-failed/2022/01/01/12/*"</code></p>
+          <h2>Confirm data is in Splunk</h2>
+          <p>Log into Splunk, and query for recent data, and confirm data is ingested.</p>
+          <h2>tl;dr:</h2>
+          <p><br>
+          Situation:
+          <br>Delivery of AWS logs to Splunk <a href="https://docs.splunk.com/Documentation/Splunk/9.0.5/Data/UsetheHTTPEventCollector">HEC</a> via KDF has failed, failed delivery logs are being stored in an S3 Dead Letter Queue (DLQ)  bucket.   </p>
+          <p>Task:
+          <br>Re-Ingest failed delivery logs into Splunk, confirming that logs are delivered in the correct format, and can be queried in Splunk.</p>
+          <p>Action:
+          <br>Deploy the <a href="https://github.com/animetauren/aws-splunk-firehose-error-reingest/tree/main/firehose-reingest">Re-Ingest Pipeline</a>, this will create a KDF pipeline, along with two Lambda functions that will ingest the logs from the S3 DLQ bucket, push to a KDF Data Stream, and sent to Splunk HEC to be ingested by Splunk.</p>
+          <p>Result:
+          <br>Logs are confirmed to be in Splunk in the correct format, and that there is no break in logs. </p>
+          <h2>Disclaimer</h2>
+          <p>The information shared is for general informational purposes only. I do not provide any warranty and recommend readers to test the content thoroughly before implementing it. Use the information at your own discretion and risk. </p>
+        </div>
+
+        <p class="meta">originally published on blog.anmtrn.com</p>
+
+        <p class="back"><a href="/runes/">← runes</a></p>
+      </article>
+    </main>
+  </body>
+</html>

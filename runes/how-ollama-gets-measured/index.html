@@ -36,31 +36,19 @@
           <p class="meta">tldr</p>
           <ul>
             <li>
-              <strong>It isn't faster here.</strong> At a truncation-audited
-              255k-token context on a 256 GB Mac Studio, oMLX 0.8.0 beats
-              Ollama 0.40.16 on every throughput metric: 3.7–5.1× on cold
-              TTFT, ~3.6× on prefill, 41–63% on decode.
+              <strong>It isn't faster here.</strong> At an audited 255k-token
+              context, oMLX 0.8.0 beats Ollama 0.40.16 on cold TTFT
+              (3.7–5.1×), prefill (~3.6×) and decode (41–63%), with quality
+              10/10 on both.
             </li>
             <li>
-              <strong>Quality ties.</strong> 10/10 each — exact arithmetic,
-              code, format, and needles at 25% and 75% depth inside a true
-              255,474-token context.
+              <strong>Ollama's one real win:</strong> 0.24 s repeat TTFT from a
+              resident KV cache. It costs 149–155 GB and dies with the process.
             </li>
             <li>
-              <strong>Ollama has one real win:</strong> 0.24 s repeat-prompt
-              TTFT from a resident KV cache. It costs 149–155 GB wired plus
-              swap, and it dies with the process.
-            </li>
-            <li>
-              <strong>The folklore is a measurement story:</strong>
-              short-prompt benchmarks on another model class, silent 4k/32k
-              context defaults on smaller machines, MTP on by default,
-              cache-warmed TTFT presented as general speed — and one
-              head-to-head whose author corrected it to oMLX ~1.7× faster.
-            </li>
-            <li>
-              <strong>The engine is good.</strong> The defaults and the way it
-              gets measured are the problem.
+              <strong>The folklore is measurement foam:</strong> short-prompt
+              benchmarks, silent 4k/32k defaults, MTP on by default,
+              cache-warmed TTFT. The engine is good; the measuring isn't.
             </li>
           </ul>
 
@@ -70,7 +58,124 @@
             inherit rather than check. I inherited it, then spent a day
             checking, because I had a 256 GB Mac Studio, two Qwen checkpoints I
             actually wanted to use, and a requirement that made the comparison
-            unarguable: the full ~252k context, not a summary of it.
+            unarguable: the full ~252k context, not a summary of it. This is
+            the story of trying to get those two models to run as well as this
+            hardware allows — through llama.cpp, Ollama, and finally oMLX.
+          </p>
+
+          <p>
+            <strong>The mission.</strong> Two specific checkpoints, one
+            machine, and a hard requirement: the best performance I could get
+            from each of them with the full ~252k window intact. Not a demo at
+            8k, not a benchmark at the context length the model doesn't
+            actually need. The window was the constraint, and it disqualified
+            more configurations than any speed number did.
+          </p>
+
+          <p>
+            <strong>Qwen3.8-Flash-Next</strong> is Qwen's experimental preview
+            of the Qwen4 architecture
+            (<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" rel="noopener" target="_blank">Qwen/Qwen3.8-Flash-Next</a>):
+            a vision-capable mixture of experts, 125B total parameters with
+            only 6B active per token. It pairs Gated DeltaNet — linear
+            attention that carries a recurrent state instead of a growing KV —
+            with Qwen Sparse Attention for the layers that must look back at
+            everything, and keeps a 51B-parameter n-gram embedding table on the
+            side. Native context: 262,144 tokens.
+          </p>
+
+          <p>
+            <strong>Qwen3.8-27B</strong> is the dense sibling: ~27.8B
+            parameters, the same GDN-hybrid layout, the same 262,144-token
+            native window.
+          </p>
+
+          <p>
+            Both are served here as Jundot's oQ4e-mtp checkpoints —
+            mixed-precision 4/5-bit MLX quantizations, ~100 GB and ~17.5 GB on
+            disk, that preserve the model's own multi-token-prediction head.
+            That last part is what makes speculative decoding free of a
+            separate drafter: no second model, no second set of weights. Native
+            context on both, no YaRN.
+          </p>
+
+          <p>
+            <strong>First: llama.cpp, tuned to the teeth, disqualified by the
+            mission.</strong> The 125B ran there as a 104 GB UD-Q4_K_XL GGUF in
+            four shards, under a launchd service, through twenty-eight logged
+            one-variable experiments: batch and ubatch sizes, draft depths,
+            n-gram speculation (mostly rejected, with the reasons written
+            down), and the 1.0.0 update. The record is real —
+            <strong>+48%</strong> prefill and <strong>+15–29%</strong> decode
+            from tuning alone — finishing at <strong>1,913 tok/s</strong>
+            prefill, <strong>107–123 tok/s</strong> decode on the agent loop,
+            and <strong>~430–500 ms</strong> append-turn TTFT where only a few
+            dozen tokens of each turn were new.
+          </p>
+
+          <p>
+            It was also written at a <strong>32,768-token context
+            window</strong> — -c 32768 in the archived launcher — and that ended
+            it. The engine that tuned best could not serve the window the
+            mission needed. The numbers weren't the problem. The scope was.
+          </p>
+
+          <p>
+            <strong>Second: Ollama, first to serve the whole window.</strong>
+            Its MLX engine (v0.40.x) served 262,144 tokens natively by default —
+            the first engine on this box that could run the actual requirement
+            rather than a fraction of it. The build is
+            qwen3.8-flash-next:125b-mlx, NVFP4, 97.63 GiB: a complete checkpoint
+            with nothing stripped, about 5 GiB larger on disk than the oQ4e it
+            gets measured against, and its engine keeps the 26.82 GiB n-gram
+            table host-backed rather than resident in the GPU set.
+          </p>
+
+          <p>
+            The receipts come from this machine. Its November 10 log shows
+            chunked prefill holding <strong>2,066–2,076 tok/s at 127k
+            depth</strong> — above the 1,913 the tuned llama.cpp stack topped out
+            at, and no later llama.cpp row beat it, including after 1.0.0. For
+            deep prompts that is the number that matters, and it was the first
+            evidence that the window and the speed could coexist.
+          </p>
+
+          <p>
+            The other half, because the next beat only earns its credibility if
+            this one is written: llama.cpp kept a decode edge at short range,
+            <strong>107–123 tok/s</strong> against Ollama's
+            <strong>46–63</strong>. Ollama won the mission — a native window,
+            and prefill at depth — not every metric.
+          </p>
+
+          <p>
+            <strong>Third: the folklore, and the foam.</strong> "Ollama's MLX
+            engine is faster" became the default sentence on Apple Silicon, and
+            it stayed true to everyone who repeated it because nobody
+            re-measured it. The matched head-to-head below is the answer: three
+            252k prompts audited to the token, a 10/10 quality tie.
+          </p>
+
+          <p>
+            The mechanisms are in the body of this post with their receipts — a
+            <a href="https://ollama.com/blog/mlx" rel="noopener" target="_blank">published benchmark</a>
+            that is a short-prompt run on a different model class
+            (Qwen3.5-35B-A3B);
+            <a href="https://github.com/ollama/ollama/releases/tag/v0.40.16" rel="noopener" target="_blank">v0.40.16 notes</a>
+            admitting /v1/responses "no longer silently truncates by default";
+            4k and 32k context defaults on smaller machines that make a nominal
+            252k run secretly a 4k run; MTP on by default at adaptive depth 0→7,
+            with their own 27B MTP variant carrying a documented 2×-slower
+            report; cache-warmed TTFT quoted as general speed; and one
+            <a href="https://www.reddit.com/r/LocalLLM/comments/1xlatgd/m5_ultra_96gb_64core_gpu_numbers_ollama_mlx/" rel="noopener" target="_blank">Ultra-class head-to-head</a>
+            that began by claiming Ollama faster and was corrected by its own
+            author to oMLX ~1.7×.
+          </p>
+
+          <p>
+            No single number in that list is a lie. The pipeline of quoted
+            numbers lies about the aggregate. The engine is good; the
+            measurement is the problem.
           </p>
 
           <p>
@@ -81,13 +186,6 @@
             INT8 prefill on, Lightning MTP at depth 3 for the 125B and depth 4
             for the 27B, and a tiered cache: 64 GB hot, 400 GB of paged SSD
             behind it.
-          </p>
-
-          <p>
-            The checkpoints are Jundot's oQ4e-mtp builds of
-            <a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" rel="noopener" target="_blank">Qwen's Flash-Next</a>
-            and the 27B — ~100 GB and ~17.5 GB on disk. Both serve 262,144
-            tokens natively, no YaRN.
           </p>
 
           <p>
@@ -138,11 +236,9 @@
           </p>
 
           <p>
-            <strong>The comparison.</strong> Ollama 0.40.16, same machine, its
-            own build of the 125B: qwen3.8-flash-next:125b-mlx, NVFP4, 97.63
-            GiB — a complete 180B checkpoint with nothing stripped, and about
-            5 GiB larger on disk than the oQ4e it was measured against. Not a
-            lighter quant flattering itself.
+            <strong>The comparison.</strong> Ollama 0.40.16, same machine, the
+            same 125B in its own NVFP4 build — the complete checkpoint from
+            above, not a lighter quant flattering itself.
           </p>
 
           <p>
