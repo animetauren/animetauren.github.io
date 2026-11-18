@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>a static site is a promise — anmtrn</title>
+    <meta name="description" content="On plain HTML and CSS as a long-lived format." />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/runes/">runes</a>
+        <a href="/blog/">blog</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta"><time datetime="2026-10-04">2026.10.04</time></p>
+        <h1>a static site is a promise</h1>
+
+        <div class="prose">
+          <p>
+            HTML and CSS, served as files. No server rendering, no hydration, no
+            JavaScript waiting to be parsed before the first pixel appears.
+          </p>
+          <p>
+            There's a promise buried in that: the page you save today will still
+            open in ten years. Not because browsers are generous, but because
+            nothing here depends on a build that has to keep working.
+          </p>
+          <p>
+            I don't think every site should be static. Some things genuinely need
+            a database and a request cycle. But most personal pages don't. A page
+            about a person is, at heart, a document — and documents have been
+            fine for a very long time.
+          </p>
+          <p>
+            The other half of the promise is maintenance. When this site breaks,
+            it will be because I broke it, in a file I can read from top to
+            bottom in one sitting. That's a nice property to have.
+          </p>
+        </div>
+
+        <p class="back"><a href="/blog/">← blog</a></p>
+      </article>
+    </main>
+  </body>
+</html>
