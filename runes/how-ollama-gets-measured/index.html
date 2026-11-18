@@ -65,11 +65,10 @@
 
           <p>
             <strong>The mission.</strong> Two specific checkpoints, one
-            machine, and a hard requirement: the best performance I could get
-            from each of them with the full ~252k window intact. Not a demo at
-            8k, not a benchmark at the context length the model doesn't
-            actually need. The window was the constraint, and it disqualified
-            more configurations than any speed number did.
+            machine, one hard requirement: the best performance I could get
+            from each with the full ~252k window intact. Not a demo at 8k. The
+            window was the constraint, and it disqualified more configurations
+            than any speed number did.
           </p>
 
           <p>
@@ -78,10 +77,9 @@
             (<a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" rel="noopener" target="_blank">Qwen/Qwen3.8-Flash-Next</a>):
             a vision-capable mixture of experts, 125B total parameters with
             only 6B active per token. It pairs Gated DeltaNet — linear
-            attention that carries a recurrent state instead of a growing KV —
-            with Qwen Sparse Attention for the layers that must look back at
-            everything, and keeps a 51B-parameter n-gram embedding table on the
-            side. Native context: 262,144 tokens.
+            attention carrying a recurrent state instead of a growing KV — with
+            Qwen Sparse Attention, and keeps a 51B-parameter n-gram embedding
+            table on the side. Native context: 262,144 tokens, no YaRN.
           </p>
 
           <p>
@@ -94,9 +92,8 @@
             Both are served here as Jundot's oQ4e-mtp checkpoints —
             mixed-precision 4/5-bit MLX quantizations, ~100 GB and ~17.5 GB on
             disk, that preserve the model's own multi-token-prediction head.
-            That last part is what makes speculative decoding free of a
-            separate drafter: no second model, no second set of weights. Native
-            context on both, no YaRN.
+            That head is what makes speculative decoding free of a separate
+            drafter: no second model, no second set of weights.
           </p>
 
           <p>
@@ -104,20 +101,19 @@
             mission.</strong> The 125B ran there as a 104 GB UD-Q4_K_XL GGUF in
             four shards, under a launchd service, through twenty-eight logged
             one-variable experiments: batch and ubatch sizes, draft depths,
-            n-gram speculation (mostly rejected, with the reasons written
-            down), and the 1.0.0 update. The record is real —
-            <strong>+48%</strong> prefill and <strong>+15–29%</strong> decode
-            from tuning alone — finishing at <strong>1,913 tok/s</strong>
-            prefill, <strong>107–123 tok/s</strong> decode on the agent loop,
-            and <strong>~430–500 ms</strong> append-turn TTFT where only a few
-            dozen tokens of each turn were new.
+            n-gram speculation (mostly rejected, reasons written down), the
+            1.0.0 update. The record is real — <strong>+48%</strong> prefill and
+            <strong>+15–29%</strong> decode from tuning alone — finishing at
+            <strong>1,913 tok/s</strong> prefill, <strong>107–123 tok/s</strong>
+            decode on the agent loop, <strong>~430–500 ms</strong> append-turn
+            TTFT.
           </p>
 
           <p>
             It was also written at a <strong>32,768-token context
             window</strong> — -c 32768 in the archived launcher — and that ended
             it. The engine that tuned best could not serve the window the
-            mission needed. The numbers weren't the problem. The scope was.
+            mission needed. The numbers weren't the problem; the scope was.
           </p>
 
           <p>
@@ -126,56 +122,54 @@
             the first engine on this box that could run the actual requirement
             rather than a fraction of it. The build is
             qwen3.8-flash-next:125b-mlx, NVFP4, 97.63 GiB: a complete checkpoint
-            with nothing stripped, about 5 GiB larger on disk than the oQ4e it
-            gets measured against, and its engine keeps the 26.82 GiB n-gram
-            table host-backed rather than resident in the GPU set.
+            with nothing stripped, ~5 GiB larger on disk than the oQ4e, with the
+            26.82 GiB n-gram table kept host-backed instead of resident in the
+            GPU set.
           </p>
 
           <p>
-            The receipts come from this machine. Its November 10 log shows
+            The receipts are from this machine. Its November 10 log shows
             chunked prefill holding <strong>2,066–2,076 tok/s at 127k
-            depth</strong> — above the 1,913 the tuned llama.cpp stack topped out
-            at, and no later llama.cpp row beat it, including after 1.0.0. For
-            deep prompts that is the number that matters, and it was the first
-            evidence that the window and the speed could coexist.
+            depth</strong> — above the 1,913 the tuned stack topped out at, and
+            no later llama.cpp row beat it, 1.0.0 included. For deep prompts
+            that is the number that matters, and it was the first evidence that
+            window and speed could coexist.
           </p>
 
           <p>
             The other half, because the next beat only earns its credibility if
             this one is written: llama.cpp kept a decode edge at short range,
             <strong>107–123 tok/s</strong> against Ollama's
-            <strong>46–63</strong>. Ollama won the mission — a native window,
-            and prefill at depth — not every metric.
+            <strong>46–63</strong>. Ollama won the mission — native window,
+            prefill at depth — not every metric.
           </p>
 
           <p>
             <strong>Third: the folklore, and the foam.</strong> "Ollama's MLX
             engine is faster" became the default sentence on Apple Silicon, and
             it stayed true to everyone who repeated it because nobody
-            re-measured it. The matched head-to-head below is the answer: three
-            252k prompts audited to the token, a 10/10 quality tie.
+            re-measured it. The matched head-to-head below is the answer —
+            three 252k prompts audited to the token, 10/10 quality apiece.
           </p>
 
           <p>
-            The mechanisms are in the body of this post with their receipts — a
+            The audit trail says the rest: a
             <a href="https://ollama.com/blog/mlx" rel="noopener" target="_blank">published benchmark</a>
-            that is a short-prompt run on a different model class
-            (Qwen3.5-35B-A3B);
+            that is a short-prompt run on another model class,
             <a href="https://github.com/ollama/ollama/releases/tag/v0.40.16" rel="noopener" target="_blank">v0.40.16 notes</a>
-            admitting /v1/responses "no longer silently truncates by default";
-            4k and 32k context defaults on smaller machines that make a nominal
-            252k run secretly a 4k run; MTP on by default at adaptive depth 0→7,
-            with their own 27B MTP variant carrying a documented 2×-slower
-            report; cache-warmed TTFT quoted as general speed; and one
+            admitting /v1/responses "no longer silently truncates by default",
+            4k and 32k defaults on smaller machines that make a nominal 252k run
+            secretly a 4k run, MTP on by default at adaptive depth 0→7 (their
+            own 27B MTP variant shipped a documented 2×-slower report),
+            cache-warmed TTFT quoted as speed, and one
             <a href="https://www.reddit.com/r/LocalLLM/comments/1xlatgd/m5_ultra_96gb_64core_gpu_numbers_ollama_mlx/" rel="noopener" target="_blank">Ultra-class head-to-head</a>
-            that began by claiming Ollama faster and was corrected by its own
-            author to oMLX ~1.7×.
+            its own author corrected to oMLX ~1.7×.
           </p>
 
           <p>
-            No single number in that list is a lie. The pipeline of quoted
-            numbers lies about the aggregate. The engine is good; the
-            measurement is the problem.
+            No single number there is a lie. The pipeline of quoted numbers lies
+            about the aggregate. The engine is good; the measurement is the
+            problem.
           </p>
 
           <p>
