@@ -9,6 +9,7 @@ no framework, no build step.
 ├── about/index.html
 ├── runes/
 │   ├── index.html              post list
+│   ├── how-ollama-gets-measured/
 │   ├── small-things/
 │   ├── a-static-site/
 │   └── notes-on-the-futhark/
@@ -31,9 +32,8 @@ python3 -m http.server 4321
 ## Editing
 
 **Links.** The GitHub and LinkedIn URLs appear on `index.html` (the four
-options) and again in the last paragraph of `about/index.html`. Both point at
-`github.com/henryrobalino` and `linkedin.com/in/henryrobalino` — change them in
-those two files if the handles are different.
+options) and again in the last paragraph of `about/index.html`: they point at
+`github.com/animetauren` and `linkedin.com/in/hrobalino`.
 
 **The wordmark.** `index.html` contains an 18-row `<pre>` block. Letters `a`,
 `n`, `m` and `r` sit at the x-height of 14 rows; the `t` rises four rows above

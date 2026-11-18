@@ -224,6 +224,29 @@ a:focus-visible {
   border-color: var(--ink);
 }
 
+.prose ul,
+.prose ol {
+  margin: 0 0 1.15rem;
+  padding-left: 1.4rem;
+  max-width: 46ch;
+}
+
+.prose li {
+  margin-bottom: 0.4rem;
+}
+
+.prose li:last-child {
+  margin-bottom: 0;
+}
+
+.prose li::marker {
+  color: var(--muted);
+}
+
+.prose strong {
+  font-weight: 600;
+}
+
 .meta {
   margin: 0 0 0.5rem;
   font-size: 12.5px;
