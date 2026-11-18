@@ -37,9 +37,8 @@
           <ul>
             <li>
               <strong>It isn't faster here.</strong> At an audited 255k-token
-              context, oMLX 0.8.0 beats Ollama 0.40.16 on cold TTFT
-              (3.7–5.1×), prefill (~3.6×) and decode (41–63%), with quality
-              10/10 on both.
+              context, oMLX 0.8.0 beats Ollama 0.40.16 on cold TTFT 3.7–5.1×,
+              prefill ~3.6×, decode 41–63%; quality 10/10 each.
             </li>
             <li>
               <strong>Ollama's one real win:</strong> 0.24 s repeat TTFT from a
@@ -99,7 +98,7 @@
           <p>
             <strong>First: llama.cpp, tuned to the teeth, disqualified by the
             mission.</strong> The 125B ran there as a 104 GB UD-Q4_K_XL GGUF in
-            four shards, under a launchd service, through twenty-eight logged
+            four shards, under a launchd service, through twenty-eight numbered
             one-variable experiments: batch and ubatch sizes, draft depths,
             n-gram speculation (mostly rejected, reasons written down), the
             1.0.0 update. The record is real — <strong>+48%</strong> prefill and
@@ -110,7 +109,7 @@
           </p>
 
           <p>
-            It was also written at a <strong>32,768-token context
+            It was also benchmarked at a <strong>32,768-token context
             window</strong> — -c 32768 in the archived launcher — and that ended
             it. The engine that tuned best could not serve the window the
             mission needed. The numbers weren't the problem; the scope was.
@@ -130,17 +129,17 @@
           <p>
             The receipts are from this machine. Its November 10 log shows
             chunked prefill holding <strong>2,066–2,076 tok/s at 127k
-            depth</strong> — above the 1,913 the tuned stack topped out at, and
-            no later llama.cpp row beat it, 1.0.0 included. For deep prompts
-            that is the number that matters, and it was the first evidence that
-            window and speed could coexist.
+            depth</strong> — against the 1,913 the tuned llama.cpp stack finished
+            on, the number that still stood when the stack was retired under
+            1.0.0. For deep prompts that is the number that matters, and it was
+            the first evidence that window and speed could coexist.
           </p>
 
           <p>
             The other half, because the next beat only earns its credibility if
             this one is written: llama.cpp kept a decode edge at short range,
-            <strong>107–123 tok/s</strong> against Ollama's
-            <strong>46–63</strong>. Ollama won the mission — native window,
+            <strong>107–123 tok/s</strong> on the agent loop against Ollama's
+            <strong>59.6–62.7</strong>. Ollama won the mission — native window,
             prefill at depth — not every metric.
           </p>
 
@@ -159,9 +158,9 @@
             <a href="https://github.com/ollama/ollama/releases/tag/v0.40.16" rel="noopener" target="_blank">v0.40.16 notes</a>
             admitting /v1/responses "no longer silently truncates by default",
             4k and 32k defaults on smaller machines that make a nominal 252k run
-            secretly a 4k run, MTP on by default at adaptive depth 0→7 (their
-            own 27B MTP variant shipped a documented 2×-slower report),
-            cache-warmed TTFT quoted as speed, and one
+            secretly a 4k run, MTP on by default at adaptive depth 0→7 (a
+            documented community report puts their MTP-enabled 27B at 2×
+            slower), cache-warmed TTFT quoted as speed, and one
             <a href="https://www.reddit.com/r/LocalLLM/comments/1xlatgd/m5_ultra_96gb_64core_gpu_numbers_ollama_mlx/" rel="noopener" target="_blank">Ultra-class head-to-head</a>
             its own author corrected to oMLX ~1.7×.
           </p>
@@ -183,10 +182,9 @@
           </p>
 
           <p>
-            Depth 4 wasn't inherited. On the 27B it measured better than depth
-            3: the fourth draft is accepted 79–86% of the time, and depth 3
-            saves about 2 GB. On a 256 GB machine that isn't a trade worth
-            making.
+            Depth 4 wasn't inherited: on the 27B the fourth draft is accepted
+            79–86% of the time, and depth 3 saves about 2 GB. On a 256 GB
+            machine that isn't a trade worth making.
           </p>
 
           <p>
@@ -302,18 +300,17 @@
           </p>
 
           <p>
-            <strong>Where the impression comes from.</strong> None of this is a
-            story about a bad engine. It's a story about defaults, and about
-            the way the engine gets measured.
+            <strong>Where the impression comes from, item by item.</strong> None
+            of this is a story about a bad engine. It's a story about defaults,
+            and about the way the engine gets measured.
           </p>
 
           <p>
             <strong>One: the published benchmark is a different workload.</strong>
             Ollama's
             <a href="https://ollama.com/blog/mlx" rel="noopener" target="_blank">MLX announcement</a>
-            benchmarks a 35B-A3B on short prompts — a different model class in
-            a different regime — and makes no long-context claim anywhere. The
-            long-context claim was added later, by other people, by
+            benchmarks a 35B-A3B on short prompts and makes no long-context
+            claim at all. That claim was added later, by other people, by
             generalization.
           </p>
 
@@ -322,11 +319,11 @@
             <a href="https://github.com/ollama/ollama/releases/tag/v0.40.16" rel="noopener" target="_blank">v0.40.16 notes</a>
             say /v1/responses "no longer silently truncates by default", which
             is a sentence that tells you what it did before. The defaults are
-            4k below 24 GiB of VRAM and 32k up to 48 GiB. A 252k run that is
-            secretly a 4k run looks spectacular. Credit where it's due: on this
-            256 GB box the default is an honest 262,144, and the audit above
-            confirmed every token was counted. The failure mode lives on
-            smaller machines, where nobody checks.
+            4k below 24 GiB of VRAM and 32k up to 48 GiB, so a 252k run that is
+            secretly a 4k run looks spectacular. On this 256 GB box the default
+            is an honest 262,144, and the audit confirmed every token was
+            counted; the failure mode lives on smaller machines, where nobody
+            checks.
           </p>
 
           <p>
@@ -355,12 +352,10 @@
 
           <p>
             Two checks against my own bias. MacStories published 74.7 tok/s
-            after a 256K prompt, and this box measures 84–91 on the same class
-            of workload, so the external baseline points the same way as the
-            local one. And this machine's own Ollama logs from November 10 —
+            after a 256K prompt; this box measures 84–91 on the same class of
+            workload. And this machine's own Ollama logs from November 10 —
             predating all of this — show 46–48 tok/s decode at 127k and a
-            96 GiB peak. The fresh numbers agree with them. It was never a bad
-            install.
+            96 GiB peak. The fresh numbers agree. It was never a bad install.
           </p>
 
           <p>
@@ -446,14 +441,13 @@
           </ul>
 
           <p>
-            Ollama's engine is good engineering. NVFP4 weights, a complete 180B
-            checkpoint, the 26.82 GiB PLE table kept host-side so it stays out
-            of the GPU set, adaptive MTP on by default, an honest default
-            context on a machine that can hold it. Those are the choices of
-            people who understand the hardware. My complaint is with the
-            measurement culture around the engine, and with defaults that
-            flatter it on machines that can't hold the context. Not with the
-            engineers.
+            Ollama's engine is good engineering. NVFP4 weights, the complete
+            checkpoint with nothing stripped, the PLE table kept out of the GPU
+            set, adaptive MTP on by default, an honest default context on a
+            machine that can hold it. Those are the choices of people who
+            understand the hardware. My complaint is with the measurement
+            culture around the engine, and with defaults that flatter it on
+            machines that can't hold the context. Not with the engineers.
           </p>
 
           <p>

@@ -36,37 +36,19 @@
           <p class="meta">tldr</p>
           <ul>
             <li>
-              <strong>The draft is good.</strong> NVIDIA published a standalone
-              4.21B distilled drafter for Qwen3.8-27B that accepts 5.11–5.58
-              tokens per step against the 27B's own MTP head at 3.81–3.86. That
-              advantage is real, at every draft length they measured.
+              <strong>The draft is better.</strong> NVIDIA's 4.21B drafter
+              accepts 5.11–5.58 tokens per step against the 27B's own MTP head
+              at 3.81–3.86, at every draft length measured.
             </li>
             <li>
-              <strong>It never ran.</strong> No load path in oMLX 0.8.0, the only
-              Apple Silicon prototype measured it losing to the existing z-lab
-              DFlash2 drafter, the 252k arithmetic projects ~13–20 tok/s against
-              a measured 46.5, and its known warm-restore bug would forfeit the
-              cache the machine exists to protect.
+              <strong>It never ran.</strong> No load path in oMLX 0.8.0; the one
+              Apple Silicon attempt lost to z-lab DFlash2; 252k physics project
+              ~13–20 tok/s against a measured 46.5.
             </li>
             <li>
-              <strong>Acceptance isn't throughput.</strong> Throughput is
-              accepted tokens per step times steps per second. Acceptance is a
-              property of the draft's distribution. Cost per pass is a property
-              of your hardware topology. NVIDIA's speedup assumes drafting
-              hidden behind parallel verification on LPX. One Mac has nowhere to
-              hide it.
-            </li>
-            <li>
-              <strong>The rejection is the finding.</strong> A candidate card,
-              four checks with receipts, a watch-list, and gates agreed before
-              any future run. Forty minutes of reading instead of an afternoon
-              and a restarted server.
-            </li>
-            <li>
-              <strong>This isn't a knock on NVIDIA.</strong> The distillation is
-              careful and the hardware assumption is printed on the box. The
-              reflex under examination is the common one: benchmark first, check
-              topology later.
+              <strong>Acceptance isn't throughput.</strong> NVIDIA's speedup
+              assumes LPX hardware that hides drafting behind parallel
+              verification. One Mac has nowhere to hide it.
             </li>
           </ul>
 
@@ -80,10 +62,12 @@
             This is part two of a short series.
             <a href="/runes/how-ollama-gets-measured/">Part one</a>
             was about a number everyone quotes that had never been measured
-            properly. This one is about the experiment everyone would run next
-            and why it didn't deserve the GPU time — the forty minutes before
-            the afternoon, which is the part of the practice that doesn't
-            produce a chart.
+            properly: two Qwen checkpoints, one 256 GB Mac Studio, the full ~252k
+            window. The 27B here is the dense Qwen3.8 from that post, with the
+            same native 262,144-token context on the same machine. This one is
+            about the experiment everyone would run next and why it didn't
+            deserve the GPU time — the forty minutes before the afternoon, which
+            is the part of the practice that doesn't produce a chart.
           </p>
 
           <p>
