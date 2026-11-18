@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>how ollama gets measured — anmtrn</title>
+    <meta
+      name="description"
+      content="On two engines, a 252k context, and how a benchmark travels further than its correction."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/runes/">runes</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta">
+          <time datetime="2026-11-18">2026.11.18</time> · part 1
+        </p>
+        <h1>how ollama gets measured</h1>
+
+        <div class="prose">
+          <p class="meta">tldr</p>
+          <ul>
+            <li>
+              <strong>It isn't faster here.</strong> At a truncation-audited
+              255k-token context on a 256 GB Mac Studio, oMLX 0.8.0 beats
+              Ollama 0.40.16 on every throughput metric: 3.7–5.1× on cold
+              TTFT, ~3.6× on prefill, 41–63% on decode.
+            </li>
+            <li>
+              <strong>Quality ties.</strong> 10/10 each — exact arithmetic,
+              code, format, and needles at 25% and 75% depth inside a true
+              255,474-token context.
+            </li>
+            <li>
+              <strong>Ollama has one real win:</strong> 0.24 s repeat-prompt
+              TTFT from a resident KV cache. It costs 149–155 GB wired plus
+              swap, and it dies with the process.
+            </li>
+            <li>
+              <strong>The folklore is a measurement story:</strong>
+              short-prompt benchmarks on another model class, silent 4k/32k
+              context defaults on smaller machines, MTP on by default,
+              cache-warmed TTFT presented as general speed — and one
+              head-to-head whose author corrected it to oMLX ~1.7× faster.
+            </li>
+            <li>
+              <strong>The engine is good.</strong> The defaults and the way it
+              gets measured are the problem.
+            </li>
+          </ul>
+
+          <p>
+            People say Ollama's MLX engine is faster than oMLX. It's said often
+            enough to work as background knowledge — the kind of thing you
+            inherit rather than check. I inherited it, then spent a day
+            checking, because I had a 256 GB Mac Studio, two Qwen checkpoints I
+            actually wanted to use, and a requirement that made the comparison
+            unarguable: the full ~252k context, not a summary of it.
+          </p>
+
+          <p>
+            <strong>The machine.</strong> oMLX 0.8.0, from the DMG rather than
+            Homebrew — Xcode isn't on this box, and the DMG is the only build
+            that ships the custom kernels. All five were verified in the
+            bundle: attention, lowbit, oqh, quant_matmul, sparse_index. A8
+            INT8 prefill on, Lightning MTP at depth 3 for the 125B and depth 4
+            for the 27B, and a tiered cache: 64 GB hot, 400 GB of paged SSD
+            behind it.
+          </p>
+
+          <p>
+            The checkpoints are Jundot's oQ4e-mtp builds of
+            <a href="https://huggingface.co/Qwen/Qwen3.8-Flash-Next" rel="noopener" target="_blank">Qwen's Flash-Next</a>
+            and the 27B — ~100 GB and ~17.5 GB on disk. Both serve 262,144
+            tokens natively, no YaRN.
+          </p>
+
+          <p>
+            Depth 4 wasn't inherited. On the 27B it measured better than depth
+            3: the fourth draft is accepted 79–86% of the time, and depth 3
+            saves about 2 GB. On a 256 GB machine that isn't a trade worth
+            making.
+          </p>
+
+          <p>
+            What it buys, measured with server-side counters at temperature 0,
+            thinking off:
+          </p>
+
+          <ul>
+            <li>
+              <strong>125B</strong> — 10.9k prompt: TTFT 1.74 s, prefill
+              6,269–6,272 tok/s, decode 144–147. At 252k cold: TTFT 44.91 s,
+              prefill 5,688 tok/s, decode 82–86, peak wired 133.3 GB, swap
+              flat. At 252k warm: restore 1.14–2.83 s, decode 90.7–91.1.
+            </li>
+            <li>
+              <strong>27B</strong> — 10.9k prompt: TTFT 4.25 s, prefill 2,574
+              tok/s, decode 101–104. At 252k cold: TTFT 254–257 s, prefill
+              ~1,000 tok/s, decode 46.5–46.7, wired 61–65 GB steady after an
+              81.8 GB first fill. Warm restore 6.69 s.
+            </li>
+            <li>
+              <strong>The ladder between</strong> — 32k in 4.81 s, 128k in
+              20.73 s, 252k in 44.91 s, with prefill easing 6,648 → 6,184 →
+              5,688 tok/s.
+            </li>
+          </ul>
+
+          <p>
+            The dense 27B is ~5.7× slower than the 125B MoE on cold prefill and
+            ~1.8× on decode. The cache rescues TTFT, not decode. The 125B is
+            the deep-context tool; the 27B is the fast resident.
+          </p>
+
+          <p>
+            The warm number is the one I'd defend hardest. A 252k prefix
+            restores from disk in 1.14–2.83 s. After a full server restart and
+            a reboot, the first 252k hit came back in 2.28 s — about 19× faster
+            than cold, with the log to prove it (cached=255,709, blocks=32).
+            That's the difference between a deep-context machine you use and
+            one you avoid.
+          </p>
+
+          <p>
+            <strong>The comparison.</strong> Ollama 0.40.16, same machine, its
+            own build of the 125B: qwen3.8-flash-next:125b-mlx, NVFP4, 97.63
+            GiB — a complete 180B checkpoint with nothing stripped, and about
+            5 GiB larger on disk than the oQ4e it was measured against. Not a
+            lighter quant flattering itself.
+          </p>
+
+          <p>
+            Same prompts, same salting, temperature 0, thinking off on both
+            sides, three runs or more, counters read from the server. Before
+            any of it meant anything I audited the context actually served.
+            Ollama's prompt_eval_count exact-matched oMLX's prompt_tokens on
+            all three 252k prompts: 255,716, 255,452, 255,474. Neither engine
+            truncated.
+          </p>
+
+          <ul>
+            <li>
+              <strong>short TTFT</strong> — 1.74 s vs 6.33–6.56 s
+            </li>
+            <li>
+              <strong>short prefill</strong> — 6,269 vs 1,688–1,751 tok/s; 3.6×
+            </li>
+            <li>
+              <strong>short decode</strong> — 144–147 vs 59.6–62.7 tok/s; 2.3×
+            </li>
+            <li>
+              <strong>252k cold TTFT</strong> — 44.91 s vs 167–230 s; 3.7–5.1×
+            </li>
+            <li>
+              <strong>252k cold prefill</strong> — 5,688 vs 1,111–1,568 tok/s
+            </li>
+            <li>
+              <strong>252k cold decode</strong> — 82.1 vs 58.2 tok/s, and 24.3
+              under Ollama's own two-cache memory pressure
+            </li>
+            <li>
+              <strong>252k warm decode</strong> — 90.7–91.1 vs 55.5 tok/s; +63%
+            </li>
+            <li>
+              <strong>needles in a 255,474-token prompt</strong> — 35.8 s and
+              15.8 s vs 162.3 s and 125.0 s. oMLX went in with a partial
+              prefix cache (57,344 and 180,224 tokens), which is an advantage,
+              and also the point: its cache is on disk and survives.
+            </li>
+          </ul>
+
+          <p>
+            Quality next, because speed at depth is worth nothing if the model
+            forgets the middle. Ten items, strict graders: arithmetic
+            391 / 3886 / 40119 exact on both engines; code 2/2; format 3/3;
+            needles recovered at 25% and 75% depth inside a true
+            255,474-token context. 10/10 each. The NVFP4 arithmetic failures
+            reported publicly did not reproduce here at temperature 0 with
+            thinking off.
+          </p>
+
+          <p>
+            One row goes the other way, and it's real. Re-send the identical
+            252k prompt while the runner is still resident and Ollama returns a
+            first token in 0.24 s — prompt evaluation 0.067 s, because the
+            whole KV is already in RAM. oMLX's disk-paged restore of the same
+            prompt is 1.14–2.83 s. For an exact repeat inside one process,
+            Ollama is 5–10× faster to first token.
+          </p>
+
+          <p>
+            The bill is 149.2–155.3 GB peak wired and swap: 2.4 GB on the
+            pressured 252k arm, 16.8 GB at its worst, 1.75 GB still resident
+            afterwards. And the cache dies with the process. oMLX's survives a
+            reboot.
+          </p>
+
+          <p>
+            <strong>Where the impression comes from.</strong> None of this is a
+            story about a bad engine. It's a story about defaults, and about
+            the way the engine gets measured.
+          </p>
+
+          <p>
+            <strong>One: the published benchmark is a different workload.</strong>
+            Ollama's
+            <a href="https://ollama.com/blog/mlx" rel="noopener" target="_blank">MLX announcement</a>
+            benchmarks a 35B-A3B on short prompts — a different model class in
+            a different regime — and makes no long-context claim anywhere. The
+            long-context claim was added later, by other people, by
+            generalization.
+          </p>
+
+          <p>
+            <strong>Two: a context window nobody tells you about.</strong> The
+            <a href="https://github.com/ollama/ollama/releases/tag/v0.40.16" rel="noopener" target="_blank">v0.40.16 notes</a>
+            say /v1/responses "no longer silently truncates by default", which
+            is a sentence that tells you what it did before. The defaults are
+            4k below 24 GiB of VRAM and 32k up to 48 GiB. A 252k run that is
+            secretly a 4k run looks spectacular. Credit where it's due: on this
+            256 GB box the default is an honest 262,144, and the audit above
+            confirmed every token was counted. The failure mode lives on
+            smaller machines, where nobody checks.
+          </p>
+
+          <p>
+            <strong>Three: speculation on by default.</strong> Ollama runs MTP
+            adaptively, depth 0 to 7, with acceptance 0.32–0.42 measured at
+            127k. Compare that against an engine configured without
+            speculation, or at the wrong depth, and you've manufactured a win
+            without touching a kernel. The same default cuts both ways: there's
+            a documented community report of Ollama's MTP-enabled 27B at 2×
+            slower, the kind of number that never becomes folklore.
+          </p>
+
+          <p>
+            <strong>Four: the warm hit presented as general speed.</strong>
+            0.24 s is memorable. Nobody remembers the 149 GB.
+          </p>
+
+          <p>
+            <strong>Five: the origin story itself.</strong> The one direct
+            Ultra-class head-to-head I could find —
+            <a href="https://www.reddit.com/r/LocalLLM/comments/1xlatgd/m5_ultra_96gb_64core_gpu_numbers_ollama_mlx/" rel="noopener" target="_blank">a thread in r/LocalLLM</a>
+            — began by claiming Ollama was faster and was corrected by its own
+            author to oMLX about 1.7× faster. That's the mechanism in
+            miniature: the first measurement travels; the correction doesn't.
+          </p>
+
+          <p>
+            Two checks against my own bias. MacStories published 74.7 tok/s
+            after a 256K prompt, and this box measures 84–91 on the same class
+            of workload, so the external baseline points the same way as the
+            local one. And this machine's own Ollama logs from November 10 —
+            predating all of this — show 46–48 tok/s decode at 127k and a
+            96 GiB peak. The fresh numbers agree with them. It was never a bad
+            install.
+          </p>
+
+          <p>
+            <strong>Why fewer bytes can't explain a win.</strong> The 125B
+            decays from 147 to 85 tok/s as context fills. That's +4.9 ms per
+            token, 6.8 to 11.8. Decomposed: about 6% is extra KV and index
+            bytes. About 94% is roughly 340 serialized kernel launches per
+            cycle on the QSA indexer's scan → top-k → gather chain. Effective
+            bandwidth is ~372 GB/s, about 31% of the 1.2 TB/s peak.
+          </p>
+
+          <p>
+            So at 252k this engine isn't bandwidth-bound; it's dispatch-bound.
+            An engine that moves fewer bytes per token — NVFP4's whole argument
+            — cannot get faster here. Only a different kernel schedule, or a
+            different measurement, changes the number.
+          </p>
+
+          <p>
+            The 51B n-gram/PLE table that the llama.cpp-era writeups blamed
+            costs about 2 KB per token here: a capacity cost, not a speed cost.
+            And MTP off would be ~1.6× slower, so speculation isn't the
+            problem either.
+          </p>
+
+          <p>
+            <strong>What made the numbers trustworthy.</strong> Six habits,
+            none of them clever.
+          </p>
+
+          <ol>
+            <li>
+              Audit the tokens actually served — prompt_eval_count,
+              prompt_tokens, cached_tokens. A benchmark without a truncation
+              audit is a guess with decimals.
+            </li>
+            <li>
+              Read server-side counters. Client SSE coalescing inflated decode
+              by ~17% in our own rows.
+            </li>
+            <li>
+              Warm up before recording. The first request after an install paid
+              10.49 s of Metal shader compilation; the same request then took
+              1.74 s.
+            </li>
+            <li>
+              Separate cold from warm, and say which one you're quoting. They
+              differ by ~19× on TTFT and by ~11% on decode.
+            </li>
+            <li>
+              Match the sampling: temperature 0, thinking off on both sides,
+              same prompts, same salt.
+            </li>
+            <li>
+              Change one variable per run, and write down what you rejected.
+              The rejections are the part that keeps you honest.
+            </li>
+          </ol>
+
+          <p>
+            One more, for anyone reading memory: vm_stat's wired figure reads
+            wrong while the server is idle. Use the server's own accounting.
+          </p>
+
+          <p>
+            <strong>The scoreboard, as plainly as I can put it.</strong>
+          </p>
+
+          <ul>
+            <li>speed — oMLX, on every row except the exact repeat</li>
+            <li>cold TTFT at 252k — oMLX, 3.7–5.1×</li>
+            <li>warm TTFT, exact repeat — Ollama, 0.24 s against 1.14–2.83 s</li>
+            <li>
+              warm TTFT, after a restart — oMLX, because Ollama has nothing to
+              restore
+            </li>
+            <li>quality — tie, 10/10 each</li>
+            <li>
+              memory — oMLX at 133.3 GB wired with swap flat; Ollama at
+              149.2–155.3 GB and into swap
+            </li>
+            <li>default context on a 256 GB machine — tie, 262,144 both</li>
+          </ul>
+
+          <p>
+            Ollama's engine is good engineering. NVFP4 weights, a complete 180B
+            checkpoint, the 26.82 GiB PLE table kept host-side so it stays out
+            of the GPU set, adaptive MTP on by default, an honest default
+            context on a machine that can hold it. Those are the choices of
+            people who understand the hardware. My complaint is with the
+            measurement culture around the engine, and with defaults that
+            flatter it on machines that can't hold the context. Not with the
+            engineers.
+          </p>
+
+          <p>
+            oMLX isn't finished either. Ollama's 0.24 s warm floor is better
+            than our 1.14–2.83 s, and closing that gap is an open item here,
+            not a solved one. The 147 → 85 decay is ~94% a serialized
+            kernel-scan problem that nobody upstream has fused yet.
+          </p>
+
+          <p>
+            Part 2 covers two experiments that lost: the oQ4h weights and the
+            NVIDIA external draft. They're more useful than the wins, because a
+            rejected experiment with a receipt is worth more than an accepted
+            one without.
+          </p>
+
+          <p>
+            The number you can defend is worth more than the number that
+            travels.
+          </p>
+        </div>
+
+        <p class="back"><a href="/runes/">← runes</a></p>
+      </article>
+    </main>
+  </body>
+</html>
