@@ -7,8 +7,7 @@ no framework, no build step.
 .
 ├── index.html                  landing page (wordmark + four links)
 ├── about/index.html
-├── runes/index.html            Elder Futhark reference
-├── blog/
+├── runes/
 │   ├── index.html              post list
 │   ├── small-things/
 │   ├── a-static-site/
@@ -16,6 +15,9 @@ no framework, no build step.
 ├── style.css                   the only stylesheet
 └── vercel.json
 ```
+
+`runes` is the writing section: a list of posts at `/runes/`, each post in its
+own folder.
 
 ## Local preview
 
@@ -39,14 +41,14 @@ them, so the shortest character is exactly 14 rows tall. Each glyph is drawn
 out of its own lowercase letter. It is plain text — edit it directly, but keep
 the right-hand padding on every row so the block stays aligned.
 
-**Adding a blog post.**
+**Adding a post.**
 
-1. Copy any folder under `blog/` to `blog/your-slug/`.
+1. Copy any folder under `runes/` to `runes/your-slug/`.
 2. Rewrite the `<title>`, the `.meta` date, the `<h1>`, and the `.prose`
    paragraphs.
-3. Add a matching entry to the `.posts` list in `blog/index.html`.
+3. Add a matching entry to the `.posts` list in `runes/index.html`.
 
-Superfluous posts can be removed the same way — there is no index to rebuild.
+Removing a post is the same in reverse — there is no index to rebuild.
 
 ## Deploy
 

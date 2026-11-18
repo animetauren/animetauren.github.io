@@ -11,9 +11,6 @@
 
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
     "Liberation Mono", "Courier New", monospace;
-
-  --rune: "Apple Symbols", "Segoe UI Symbol", "Noto Sans Runic", "Arial Unicode MS",
-    var(--mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -141,25 +138,6 @@ a:focus-visible {
   transform: scaleX(1);
 }
 
-.foot {
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
-  padding: 0 1.25rem clamp(1.25rem, 4vh, 2rem);
-  font-size: 12.5px;
-  letter-spacing: 0.09em;
-  color: var(--muted);
-}
-
-.foot a {
-  transition: color 0.18s ease;
-}
-
-.foot a:hover,
-.foot a:focus-visible {
-  color: var(--ink);
-}
-
 /* ------------------------------------------------------------- inner pages */
 
 .bar {
@@ -284,43 +262,6 @@ a:focus-visible {
   flex: none;
   font-size: 12.5px;
   letter-spacing: 0.06em;
-  color: var(--muted);
-}
-
-/* rune table */
-
-.runes {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
-  gap: 1px;
-  border: 1px solid var(--line);
-  background: var(--line);
-}
-
-.runes li {
-  display: grid;
-  gap: 0.1rem;
-  padding: 1.1rem 0.9rem 1.2rem;
-  background: var(--bg);
-}
-
-.runes .glyph {
-  font-family: var(--rune);
-  font-size: 28px;
-  line-height: 1.2;
-}
-
-.runes .name {
-  font-size: 12.5px;
-  letter-spacing: 0.07em;
-}
-
-.runes .mean {
-  font-size: 11.5px;
-  line-height: 1.5;
   color: var(--muted);
 }
 
