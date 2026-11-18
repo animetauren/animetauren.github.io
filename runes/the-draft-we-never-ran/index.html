@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>the draft we never ran — anmtrn</title>
+    <meta
+      name="description"
+      content="On a distilled draft model that measured better, and the pre-flight review that kept it off the GPU."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2314140f'/%3E%3Ctext x='50' y='74' font-family='monospace' font-size='68' fill='%23ffffff' text-anchor='middle'%3Ea%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <a class="brand" href="/">anmtrn</a>
+      <nav aria-label="Pages">
+        <a href="/about/">about</a>
+        <a href="/sites/">sites</a>
+        <a href="/runes/" aria-current="true">runes</a>
+      </nav>
+    </header>
+
+    <main class="page">
+      <article>
+        <p class="meta">
+          <time datetime="2026-11-18">2026.11.18</time> · part 2
+        </p>
+        <h1>the draft we never ran</h1>
+
+        <div class="prose">
+          <p class="meta">tldr</p>
+          <ul>
+            <li>
+              <strong>The draft is good.</strong> NVIDIA published a standalone
+              4.21B distilled drafter for Qwen3.8-27B that accepts 5.11–5.58
+              tokens per step against the 27B's own MTP head at 3.81–3.86. That
+              advantage is real, at every draft length they measured.
+            </li>
+            <li>
+              <strong>It never ran.</strong> No load path in oMLX 0.8.0, the only
+              Apple Silicon prototype measured it losing to the existing z-lab
+              DFlash2 drafter, the 252k arithmetic projects ~13–20 tok/s against
+              a measured 46.5, and its known warm-restore bug would forfeit the
+              cache the machine exists to protect.
+            </li>
+            <li>
+              <strong>Acceptance isn't throughput.</strong> Throughput is
+              accepted tokens per step times steps per second. Acceptance is a
+              property of the draft's distribution. Cost per pass is a property
+              of your hardware topology. NVIDIA's speedup assumes drafting
+              hidden behind parallel verification on LPX. One Mac has nowhere to
+              hide it.
+            </li>
+            <li>
+              <strong>The rejection is the finding.</strong> A candidate card,
+              four checks with receipts, a watch-list, and gates agreed before
+              any future run. Forty minutes of reading instead of an afternoon
+              and a restarted server.
+            </li>
+            <li>
+              <strong>This isn't a knock on NVIDIA.</strong> The distillation is
+              careful and the hardware assumption is printed on the box. The
+              reflex under examination is the common one: benchmark first, check
+              topology later.
+            </li>
+          </ul>
+
+          <p>
+            The card showed up on the seventeenth, and my instinct was the usual
+            one: pull the weights, find a conversion, clear the afternoon for a
+            benchmark. What stopped me was arithmetic.
+          </p>
+
+          <p>
+            This is part two of a short series.
+            <a href="/runes/how-ollama-gets-measured/">Part one</a>
+            was about a number everyone quotes that had never been measured
+            properly. This one is about the experiment everyone would run next
+            and why it didn't deserve the GPU time — the forty minutes before
+            the afternoon, which is the part of the practice that doesn't
+            produce a chart.
+          </p>
+
+          <p>
+            <strong>What they built.</strong>
+            <a href="https://huggingface.co/nvidia/Qwen3.5-4B-Qwen3.8-27B-Draft" rel="noopener" target="_blank">nvidia/Qwen3.5-4B-Qwen3.8-27B-Draft</a>
+            is a full standalone 4.21B language model in the qwen3_5 family, not
+            a draft head: a distribution distillation of the 27B, trained on
+            roughly 200k Nemotron prompts with the 27B's own sampled responses
+            as the learning signal. Tokenizer and vocabulary are natively
+            identical to the target, so there's no remapping step at decode.
+            BF16 only, about 8.4 GB, trained at a sequence length of 12,288.
+          </p>
+
+          <p>
+            The numbers are the reason anyone noticed. Published acceptance is
+            5.11–5.58 tokens per step, against 3.81–3.86 for the 27B's embedded
+            MTP head. It beats the MTP head at every draft length measured and
+            is still improving past 16. For scale: the MTP head on this machine,
+            at depth 4, measures 3.28–3.39 tokens per cycle at 76–78%
+            acceptance. So the external draft is not marginally better at
+            drafting. On acceptance alone it's the strongest drafter in reach,
+            and I want to say that plainly before explaining why it doesn't come
+            here.
+          </p>
+
+          <p>
+            <strong>Why it never ran.</strong> Four checks, each with a receipt,
+            none of them a judgment about the model.
+          </p>
+
+          <p>
+            <strong>One: no load path.</strong> oMLX's DFlash draft interface
+            expects hidden-state tappers — a drafter that reads the target's own
+            hidden states. This is a token-only model with its own forward pass
+            and its own KV cache. There is no MLX or oQ conversion; upstream is
+            BF16-only, and the community quants that exist are GGUF and NVFP4,
+            which belong to other runtimes. Loading it isn't a flag. It's a new
+            code path, written and debugged against a 27B target.
+          </p>
+
+          <p>
+            <strong>Two: the only Apple Silicon integration measured it losing.</strong>
+            oMLX prototype
+            <a href="https://github.com/jundot/omlx/pull/5402" rel="noopener" target="_blank">PR #5402</a>
+            is the only place anyone has wired an autoregressive drafter into
+            this stack. Unmerged, no server wiring, an open greedy-divergence
+            bug at depth 2 — and in its own numbers it ran slower than the
+            existing
+            <a href="https://huggingface.co/z-lab/Qwen3.8-27B-DFlash2" rel="noopener" target="_blank">z-lab DFlash2</a>
+            drafter on the same chip class, at short context. Short context is
+            where a 4B standalone should shine: its attention state is cheap
+            there, and the acceptance advantage isn't diluted. Lose there and
+            long context isn't the arm where it recovers.
+          </p>
+
+          <p>
+            <strong>Three: the 252k physics — an estimate, not a measurement.</strong>
+            Block-16 drafting means sixteen serial standalone forwards per cycle
+            before a single verification pass. Each of those carries the draft's
+            own full-width attention state, roughly 8 GB of it at 252k, and
+            every byte is billed to the same 1.2 TB/s the 27B draws on for its
+            46.5 tok/s. The projection lands at ~13–20 tok/s.
+            It is anchored by the measured context inversion in the point above,
+            not by a stopwatch on this machine. The useful part of an estimate
+            like that isn't precision; it's the sign and the margin. Even the
+            optimistic end is 57% below the baseline.
+          </p>
+
+          <p>
+            <strong>Four: the warm-restore hazard.</strong>
+            <a href="https://github.com/jundot/omlx/issues/2384" rel="noopener" target="_blank">Issue #2384</a>
+            is a GDN-sidecar walk-back bug, reproduced on this exact model
+            family, serving cached_tokens=0 and truncating where it should have
+            continued. The fix is unconfirmed in 0.8.0. Warm restore is the
+            thing this whole setup exists to protect: a 252k prefix comes back
+            in 1.14–2.83 s instead of 44.91 s cold on the 125B, and in 6.69 s on
+            the 27B. A drafter that buys single-digit decode and puts that at
+            risk isn't a trade. It's a different machine.
+          </p>
+
+          <p>
+            And the caveat is printed on the box. NVIDIA's own
+            <a href="https://nvidia.github.io/Model-Optimizer/announcements/20261117-qwen38-27b-external-drafts-lpx.html" rel="noopener" target="_blank">announcement</a>
+            frames the speedup around LPX — disaggregated hardware where
+            "drafting time can be largely hidden" behind parallel verification —
+            and notes that standalone GDN drafts are "generally unsupported in
+            inference frameworks today." That isn't marketing small print. It's
+            an honest statement of the deployment envelope, and the envelope
+            doesn't include this desk.
+          </p>
+
+          <p>
+            <strong>The economics.</strong> This is the part I'd want a reader to
+            keep, because it generalizes past one model card. Throughput is
+            acceptance times cost: accepted tokens per step from a distribution
+            match, steps per second from what a step costs on your hardware. The
+            first number is a property of the model, and it's publishable. The
+            second is a property of the machine and the context length, and it's
+            the one that decides.
+          </p>
+
+          <p>
+            Acceptance says how close the draft's distribution sits to the
+            target's, at some length, on some prompts. Cost per pass says where
+            the work lands. On disaggregated hardware those are separable: one
+            pool drafts, a bigger one verifies in parallel, and the drafting
+            time hides. On a single bandwidth-bound Mac there is no second pool
+            and no place to hide. Every draft token is a standalone forward, run
+            serially ahead of verification, billed to the same 1.2 TB/s as the
+            target's own weights and KV.
+          </p>
+
+          <p>
+            That's also why the MTP head is hard to beat here, and not because
+            it's the better drafter. It's one extra layer riding the target's
+            last hidden state — no second model, no second attention stack,
+            almost no independent state. At depth 4 it returns 3.28–3.39 tokens
+            per cycle at 76–78% acceptance, and it is cheap per draft. The 4B is
+            a whole second model, a good one, paying its own attention at my
+            context length, sixteen times per cycle.
+          </p>
+
+          <p>
+            So the draft wins the metric that's easy to publish and loses the
+            one that's hard to measure. That isn't a paradox about NVIDIA's
+            work; it's a topology mismatch, and it's visible before you touch a
+            GPU. Acceptance times per-pass cost, with per-pass cost evaluated at
+            your context length, on your machine. Three lines of arithmetic.
+          </p>
+
+          <p>
+            <strong>What I kept instead.</strong> A rejection is only worth
+            something if it's written down, or it becomes a hunch that gets
+            re-litigated every few weeks. So the candidate got a card: artifact,
+            four points with receipts, verdict, watch-list, gates.
+          </p>
+
+          <p>
+            The watch-list has two entries. PR #5402 and any follow-up
+            autoregressive-drafter work — re-reviewed once merged and
+            server-wired, with the divergence bug closed. And an MLX conversion
+            of the smaller sibling,
+            <a href="https://huggingface.co/nvidia/Qwen3.5-0.8B-Qwen3.8-27B-Draft" rel="noopener" target="_blank">Qwen3.5-0.8B-Qwen3.8-27B-Draft</a>
+            — about 1.5 GB, acceptance near MTP parity, and at that size the
+            per-pass cost stops being fantasy. That one is physically plausible
+            on this box. If someone converts it, it gets the afternoon.
+          </p>
+
+          <p>
+            And if the 27B ever gets a speculation trial at long context, the
+            candidate isn't this one. It's z-lab's DFlash2 — or an oQ4
+            conversion of it — with adaptive verification and MTP off. The gates
+            were agreed before any run, which is the point of gates:
+          </p>
+
+          <ul>
+            <li>
+              <strong>pass</strong> — decode@252k ≥ 53.5 tok/s, at least +15%
+              over the 46.5 baseline
+            </li>
+            <li>
+              <strong>pass</strong> — turn-2 warm TTFT ≤ 1.5× the MTP config
+            </li>
+            <li>
+              <strong>pass</strong> — served cached_tokens &gt; 0 in the logs
+            </li>
+            <li><strong>pass</strong> — quality battery unchanged</li>
+            <li>
+              <strong>kill</strong> — any walk-back or cached_tokens=0 signature
+            </li>
+            <li><strong>kill</strong> — warm TTFT regression worse than 2×</li>
+            <li><strong>kill</strong> — decode@252k at or below 46.5</li>
+          </ul>
+
+          <p>
+            Note the weighting. Four of the seven conditions exist to protect
+            the cache rather than to reward speed. That's correct on a machine
+            whose value is a warm 252k restore. A drafter has to earn its place
+            without disturbing the thing that makes deep context usable.
+          </p>
+
+          <p>
+            <strong>The other experiment.</strong> Part one promised two
+            experiments that lost. The second was smaller: Jundot's oQ4h
+            weights, the Hadamard-rotated mixed 4/5-bit twins of both Qwens.
+            Roughly the same footprint, and the quality battery saturated at
+            10/10 on all four checkpoints — 27B and 125B, oQ4e and oQ4h — with
+            nothing in task-level behavior to separate the formats. But the
+            extra bit costs prefill: −17% on cold 252k on both models, −21% to
+            −33% on short prompts, because the A8 prefill kernels cannot read
+            oQh weights and the log says so at load. The 27B's decode@252k did
+            improve, +1% to +6%, and it didn't buy back the prefill. Rejected as
+            default, kept on disk as the quality-headroom option. Same shape of
+            lesson: the axis being advertised wasn't the axis that decides.
+          </p>
+
+          <p>
+            <strong>Fairness.</strong> I don't want this to read as a reason
+            NVIDIA's model is bad. It isn't. A 4.21B drafter distilled from a
+            27B's own sampled responses over 200k prompts, with the tokenizer
+            matched natively so nothing has to be remapped, publishing 5.11–5.58
+            against 3.81–3.86 and stating which hardware the speedup assumes —
+            that's careful work, reported honestly. On a rack where drafting
+            runs on its own silicon and verification is parallel, the calculus
+            inverts and I'd be writing a different post.
+          </p>
+
+          <p>
+            The reflex worth examining is temporal, not technical: benchmark
+            first, topology later. It's the same reflex that let "Ollama is
+            faster" travel in part one. A number was published, the number was
+            true on somebody's machine, and nobody asked which machine before
+            repeating it.
+          </p>
+
+          <p>
+            So the second experiment in this series is the one that didn't
+            happen. Not because the model is weak. Because acceptance isn't
+            throughput, and here the difference between them is sixteen serial
+            forwards at 252k.
+          </p>
+
+          <p>
+            Forty minutes of reading, one card, four checks, seven gates, one
+            projection labeled as a projection. If the gates ever pass, the
+            afternoon is already budgeted. Until then, the cheapest experiment
+            is the one you can rule out on paper.
+          </p>
+
+          <p>Topology first. Then the afternoon.</p>
+        </div>
+
+        <p class="back"><a href="/runes/">← runes</a></p>
+      </article>
+    </main>
+  </body>
+</html>

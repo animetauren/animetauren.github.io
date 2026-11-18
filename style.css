@@ -171,7 +171,7 @@ a:focus-visible {
   color: var(--ink);
 }
 
-.bar nav a[aria-current="page"] {
+.bar nav a[aria-current] {
   color: var(--ink);
 }
 
@@ -285,6 +285,45 @@ a:focus-visible {
   flex: none;
   font-size: 12.5px;
   letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+/* sites list */
+
+.sites {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.sites li {
+  padding: 1.15rem 0 1.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.sites .name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  transition: opacity 0.18s ease;
+}
+
+.sites li:hover .name {
+  opacity: 0.55;
+}
+
+.sites .host {
+  flex: none;
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sites p {
+  margin: 0.4rem 0 0;
+  max-width: 46ch;
   color: var(--muted);
 }
 

@@ -5,10 +5,12 @@ no framework, no build step.
 
 ```
 .
-├── index.html                  landing page (wordmark + four links)
+├── index.html                  landing page (wordmark + five links)
 ├── about/index.html
+├── sites/index.html            things built and still run
 ├── runes/
 │   ├── index.html              post list
+│   ├── the-draft-we-never-ran/
 │   ├── how-ollama-gets-measured/
 │   ├── small-things/
 │   ├── a-static-site/
@@ -40,6 +42,9 @@ options) and again in the last paragraph of `about/index.html`: they point at
 them, so the shortest character is exactly 14 rows tall. Each glyph is drawn
 out of its own lowercase letter. It is plain text — edit it directly, but keep
 the right-hand padding on every row so the block stays aligned.
+
+**The sites list.** `sites/index.html` holds one `<li>` per site: a name, a
+`.host` label, and a short paragraph. Copy the block to add another.
 
 **Adding a post.**
 
