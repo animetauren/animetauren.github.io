@@ -101,6 +101,28 @@ a:focus-visible {
   letter-spacing: 0;
   font-variant-ligatures: none;
   font-kerning: none;
+  perspective: 400px;
+}
+
+.mark .glyph {
+  display: inline-block;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+}
+
+/* hovering any row of a glyph flips every row of that glyph */
+.mark:has(.g-a:hover)  .g-a,
+.mark:has(.g-n1:hover) .g-n1,
+.mark:has(.g-m:hover)  .g-m,
+.mark:has(.g-t:hover)  .g-t,
+.mark:has(.g-r:hover)  .g-r,
+.mark:has(.g-n2:hover) .g-n2 {
+  animation: glyph-flip 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes glyph-flip {
+  0%   { transform: rotateX(0); }
+  100% { transform: rotateX(360deg); }
 }
 
 .links {
@@ -367,5 +389,6 @@ a:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+    animation: none !important;
   }
 }
